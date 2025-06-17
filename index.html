@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Método Simplex</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+            font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+            background: #0d1117;
+            color: #c9d1d9;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+        }
+
+
+        .header {
+            background: #21262d;
+            border-bottom: 1px solid #30363d;
+            padding: 24px;
+            text-align: center;
+        }
+
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #f0f6fc;
+            margin-bottom: 8px;
+        }
+
+
+        .header p {
+            color: #8b949e;
+            font-size: 14px;
+        }
+
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            min-height: 600px;
+        }
+
+
+        .input-section {
+            background: #0d1117;
+            border-right: 1px solid #30363d;
+            padding: 24px;
+        }
+
+
+        .output-section {
+            background: #161b22;
+            padding: 24px;
+            overflow-y: auto;
+            max-height: 80vh;
+        }
+
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #f0f6fc;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 8px;
+        }
+
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #f0f6fc;
+        }
+
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px 12px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+        }
+
+
+        .btn {
+            background: #238636;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+
+
+        .btn:hover {
+            background: #2ea043;
+        }
+
+
+        .constraint-input {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: center;
+            font-size: 14px;
+        }
+
+
+        .constraint-input input {
+            flex: 1;
+        }
+
+
+        .constraint-input select {
+            width: 60px;
+        }
+
+
+        .constraint-input span {
+            color: #8b949e;
+            font-size: 12px;
+        }
+
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 12px;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+
+
+        th, td {
+            padding: 8px 12px;
+            text-align: center;
+            border: 1px solid #30363d;
+        }
+
+
+        th {
+            background: #21262d;
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+
+
+        td {
+            background: #0d1117;
+        }
+
+
+        tr:hover td {
+            background: #161b22;
+        }
+
+
+        .iteration {
+            margin: 16px 0;
+            padding: 16px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+        }
+
+
+        .iteration h4 {
+            color: #f0f6fc;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 16px 0;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+        }
+
+
+        .result-highlight {
+            background: #0d1117;
+            border: 1px solid #238636;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+
+        .result-highlight h3 {
+            color: #3fb950;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+
+        .result-highlight p {
+            margin-bottom: 8px;
+        }
+
+
+        .result-highlight ul {
+            margin-left: 20px;
+        }
+
+
+        .step-explanation {
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
+            font-size: 13px;
+            color: #8b949e;
+        }
+
+
+        .error {
+            background: #0d1117;
+            color: #f85149;
+            border: 1px solid #da3633;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+
+        .error h3 {
+            color: #f85149;
+            margin-bottom: 8px;
+        }
+
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+           
+            .input-section {
+                border-right: none;
+                border-bottom: 1px solid #30363d;
+            }
+           
+            .output-section {
+                max-height: none;
+            }
+        }
+
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+           
+            .header {
+                padding: 16px;
+            }
+           
+            .input-section, .output-section {
+                padding: 16px;
+            }
+        }
+
+
+        /* Estilo para o gráfico no tema escuro */
+        .chart-container canvas {
+            filter: brightness(0.9);
+        }
+
+
+        .variable-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+        }
+
+
+        .variable-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: #21262d;
+            border-radius: 4px;
+        }
+
+
+        .objective-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #3fb950;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Método Simplex</h1>
+            <p>Solver para problemas de programação linear</p>
+        </div>
+
+
+        <div class="main-content">
+            <div class="input-section">
+                <h2 class="section-title">Configuração do Problema</h2>
+               
+                <div class="form-group">
+                    <label>Tipo de Otimização:</label>
+                    <select id="optimization-type">
+                        <option value="maximize">Maximizar</option>
+                        <option value="minimize">Minimizar</option>
+                    </select>
+                </div>
+
+
+                <div class="form-group">
+                    <label>Número de Variáveis:</label>
+                    <input type="number" id="num-variables" value="2" min="2" max="10">
+                </div>
+
+
+                <div id="objective-container">
+                    <label>Função Objetivo:</label>
+                </div>
+
+
+                <div class="form-group">
+                    <label>Número de Restrições:</label>
+                    <input type="number" id="num-constraints" value="2" min="1" max="10">
+                </div>
+
+
+                <div id="constraints-container">
+                    <label>Restrições:</label>
+                </div>
+
+
+                <button class="btn" onclick="solve()">Resolver</button>
+            </div>
+
+
+            <div class="output-section">
+                <h2 class="section-title">Resultados</h2>
+                <div id="results"></div>
+                <div class="chart-container">
+                    <canvas id="feasible-region-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        let chart;
+
+
+        function updateConstraints() {
+            const numConstraints = parseInt(document.getElementById('num-constraints').value);
+            const numVariables = parseInt(document.getElementById('num-variables').value);
+            const container = document.getElementById('constraints-container');
+           
+            const existingConstraints = container.querySelectorAll('.constraint-input');
+            existingConstraints.forEach(constraint => constraint.remove());
+
+
+            for (let i = 0; i < numConstraints; i++) {
+                const constraintDiv = document.createElement('div');
+                constraintDiv.className = 'constraint-input';
+               
+                let inputs = '';
+                for (let j = 0; j < numVariables; j++) {
+                    inputs += `<input type="number" step="0.01" placeholder="x${j+1}" id="constraint-${i}-${j}">`;
+                    if (j < numVariables - 1) inputs += '<span>x' + (j+1) + ' + </span>';
+                }
+               
+                constraintDiv.innerHTML = `
+                    ${inputs}<span>x${numVariables}</span>
+                    <select id="constraint-${i}-operator">
+                        <option value="<=">&le;</option>
+                        <option value=">=">&ge;</option>
+                        <option value="=">=</option>
+                    </select>
+                    <input type="number" step="0.01" placeholder="b" id="constraint-${i}-rhs">
+                `;
+               
+                container.appendChild(constraintDiv);
+            }
+        }
+
+
+        function updateObjectiveFunction() {
+            const numVariables = parseInt(document.getElementById('num-variables').value);
+            const container = document.getElementById('objective-container');
+           
+            const existingObjective = container.querySelectorAll('.objective-input');
+            existingObjective.forEach(obj => obj.remove());
+
+
+            const objectiveDiv = document.createElement('div');
+            objectiveDiv.className = 'objective-input constraint-input';
+           
+            let inputs = '';
+            for (let j = 0; j < numVariables; j++) {
+                inputs += `<input type="number" step="0.01" placeholder="c${j+1}" id="objective-${j}">`;
+                if (j < numVariables - 1) inputs += '<span>x' + (j+1) + ' + </span>';
+            }
+           
+            objectiveDiv.innerHTML = `${inputs}<span>x${numVariables}</span>`;
+            container.appendChild(objectiveDiv);
+        }
+
+
+        document.getElementById('num-constraints').addEventListener('change', updateConstraints);
+        document.getElementById('num-variables').addEventListener('change', () => {
+            updateConstraints();
+            updateObjectiveFunction();
+        });
+
+
+        updateConstraints();
+        updateObjectiveFunction();
+
+
+        function parseInput() {
+            const numVariables = parseInt(document.getElementById('num-variables').value);
+            const numConstraints = parseInt(document.getElementById('num-constraints').value);
+            const optType = document.getElementById('optimization-type').value;
+           
+            const objective = [];
+            for (let j = 0; j < numVariables; j++) {
+                const value = parseFloat(document.getElementById(`objective-${j}`).value || 0);
+                objective.push(value);
+            }
+
+
+            const constraints = [];
+            for (let i = 0; i < numConstraints; i++) {
+                const coeffs = [];
+                for (let j = 0; j < numVariables; j++) {
+                    const value = parseFloat(document.getElementById(`constraint-${i}-${j}`).value || 0);
+                    coeffs.push(value);
+                }
+                const operator = document.getElementById(`constraint-${i}-operator`).value;
+                const rhs = parseFloat(document.getElementById(`constraint-${i}-rhs`).value || 0);
+               
+                constraints.push({
+                    coefficients: coeffs,
+                    operator: operator,
+                    rhs: rhs
+                });
+            }
+
+
+            return { objective, constraints, optType, numVariables };
+        }
+
+
+        function createTableau(objective, constraints, optType) {
+            const numVars = objective.length;
+            const numConstraints = constraints.length;
+           
+            let tableau = [];
+            let slackVars = 0;
+           
+            for (let i = 0; i < numConstraints; i++) {
+                let row = [...constraints[i].coefficients];
+               
+                for (let j = 0; j < numConstraints; j++) {
+                    if (i === j) {
+                        if (constraints[i].operator === '<=') {
+                            row.push(1);
+                            slackVars++;
+                        } else if (constraints[i].operator === '>=') {
+                            row.push(-1);
+                            slackVars++;
+                        } else {
+                            row.push(0);
+                        }
+                    } else {
+                        row.push(0);
+                    }
+                }
+               
+                row.push(constraints[i].rhs);
+                tableau.push(row);
+            }
+           
+            let objRow = [...objective];
+            if (optType === 'maximize') {
+                objRow = objRow.map(x => -x);
+            }
+           
+            for (let i = 0; i < slackVars; i++) {
+                objRow.push(0);
+            }
+            objRow.push(0);
+           
+            tableau.push(objRow);
+           
+            return tableau;
+        }
+
+
+        function findPivotColumn(tableau) {
+            const lastRow = tableau[tableau.length - 1];
+            let minValue = 0;
+            let pivotCol = -1;
+           
+            for (let j = 0; j < lastRow.length - 1; j++) {
+                if (lastRow[j] < minValue) {
+                    minValue = lastRow[j];
+                    pivotCol = j;
+                }
+            }
+           
+            return pivotCol;
+        }
+
+
+        function findPivotRow(tableau, pivotCol) {
+            let minRatio = Infinity;
+            let pivotRow = -1;
+           
+            for (let i = 0; i < tableau.length - 1; i++) {
+                if (tableau[i][pivotCol] > 0) {
+                    const ratio = tableau[i][tableau[i].length - 1] / tableau[i][pivotCol];
+                    if (ratio >= 0 && ratio < minRatio) {
+                        minRatio = ratio;
+                        pivotRow = i;
+                    }
+                }
+            }
+           
+            return pivotRow;
+        }
+
+
+        function pivot(tableau, pivotRow, pivotCol) {
+            const pivotElement = tableau[pivotRow][pivotCol];
+           
+            for (let j = 0; j < tableau[pivotRow].length; j++) {
+                tableau[pivotRow][j] /= pivotElement;
+            }
+           
+            for (let i = 0; i < tableau.length; i++) {
+                if (i !== pivotRow && tableau[i][pivotCol] !== 0) {
+                    const factor = tableau[i][pivotCol];
+                    for (let j = 0; j < tableau[i].length; j++) {
+                        tableau[i][j] -= factor * tableau[pivotRow][j];
+                    }
+                }
+            }
+        }
+
+
+        function isOptimal(tableau) {
+            const lastRow = tableau[tableau.length - 1];
+            for (let j = 0; j < lastRow.length - 1; j++) {
+                if (lastRow[j] < 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+
+        function solveSimplexMethod(objective, constraints, optType) {
+            const iterations = [];
+            let tableau = createTableau(objective, constraints, optType);
+            let iteration = 0;
+           
+            iterations.push({
+                iteration: iteration,
+                tableau: tableau.map(row => [...row]),
+                explanation: "Tableau inicial"
+            });
+           
+            while (!isOptimal(tableau) && iteration < 20) {
+                iteration++;
+               
+                const pivotCol = findPivotColumn(tableau);
+                if (pivotCol === -1) break;
+               
+                const pivotRow = findPivotRow(tableau, pivotCol);
+                if (pivotRow === -1) {
+                    iterations.push({
+                        iteration: iteration,
+                        tableau: tableau.map(row => [...row]),
+                        explanation: "Problema ilimitado"
+                    });
+                    break;
+                }
+               
+                const pivotElement = tableau[pivotRow][pivotCol];
+               
+                pivot(tableau, pivotRow, pivotCol);
+               
+                iterations.push({
+                    iteration: iteration,
+                    tableau: tableau.map(row => [...row]),
+                    explanation: `Pivô: linha ${pivotRow + 1}, coluna ${pivotCol + 1}, elemento = ${pivotElement.toFixed(3)}`
+                });
+            }
+           
+            const solution = new Array(objective.length).fill(0);
+            const finalTableau = tableau;
+           
+            for (let j = 0; j < objective.length; j++) {
+                let basicRow = -1;
+                let isBasic = true;
+               
+                for (let i = 0; i < finalTableau.length; i++) {
+                    if (Math.abs(finalTableau[i][j] - 1) < 1e-10) {
+                        if (basicRow === -1) {
+                            basicRow = i;
+                        } else {
+                            isBasic = false;
+                            break;
+                        }
+                    } else if (Math.abs(finalTableau[i][j]) > 1e-10) {
+                        isBasic = false;
+                        break;
+                    }
+                }
+               
+                if (isBasic && basicRow !== -1 && basicRow < finalTableau.length - 1) {
+                    solution[j] = finalTableau[basicRow][finalTableau[basicRow].length - 1];
+                }
+            }
+           
+            const objectiveValue = optType === 'maximize' ?
+                -finalTableau[finalTableau.length - 1][finalTableau[0].length - 1] :
+                finalTableau[finalTableau.length - 1][finalTableau[0].length - 1];
+           
+            return {
+                iterations: iterations,
+                solution: solution,
+                objectiveValue: objectiveValue,
+                optimal: isOptimal(tableau)
+            };
+        }
+
+
+        function displayResults(result, inputData) {
+            const resultsDiv = document.getElementById('results');
+           
+            let html = '';
+           
+            if (result.optimal) {
+                html += `
+                    <div class="result-highlight">
+                        <h3>Solução Ótima</h3>
+                        <p>Valor da Função Objetivo: <span class="objective-value">${result.objectiveValue.toFixed(6)}</span></p>
+                        <div class="variable-list">
+                `;
+               
+                for (let i = 0; i < result.solution.length; i++) {
+                    html += `
+                        <div class="variable-item">
+                            <span>x<sub>${i+1}</sub></span>
+                            <span>${result.solution[i].toFixed(6)}</span>
+                        </div>
+                    `;
+                }
+               
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+           
+            html += '<h3 style="margin: 20px 0 16px 0; color: #f0f6fc;">Iterações do Algoritmo</h3>';
+           
+            result.iterations.forEach(iter => {
+                html += `
+                    <div class="iteration">
+                        <h4>Iteração ${iter.iteration}</h4>
+                        <div class="step-explanation">${iter.explanation}</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Base</th>
+                `;
+               
+                for (let j = 0; j < inputData.numVariables; j++) {
+                    html += `<th>x<sub>${j+1}</sub></th>`;
+                }
+               
+                const numSlack = iter.tableau[0].length - inputData.numVariables - 1;
+                for (let j = 0; j < numSlack; j++) {
+                    html += `<th>XF<sub>${j+1}</sub></th>`;
+                }
+               
+                html += `
+                                    <th>b</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+               
+                // Linha Z primeiro
+                const zRowIndex = iter.tableau.length - 1;
+                html += '<tr>';
+                html += '<td>Z</td>';
+                for (let j = 0; j < iter.tableau[zRowIndex].length; j++) {
+                    html += `<td>${iter.tableau[zRowIndex][j].toFixed(4)}</td>`;
+                }
+                html += '</tr>';
+               
+                // Depois as outras linhas
+                for (let i = 0; i < iter.tableau.length - 1; i++) {
+                    html += '<tr>';
+                    html += `<td>R${i+1}</td>`;
+                    for (let j = 0; j < iter.tableau[i].length; j++) {
+                        html += `<td>${iter.tableau[i][j].toFixed(4)}</td>`;
+                    }
+                    html += '</tr>';
+                }
+               
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+           
+            resultsDiv.innerHTML = html;
+        }
+
+
+        function plotFeasibleRegion(inputData, result) {
+            const ctx = document.getElementById('feasible-region-chart').getContext('2d');
+           
+            if (chart) {
+                chart.destroy();
+            }
+           
+            if (inputData.numVariables !== 2) {
+                ctx.fillStyle = '#8b949e';
+                ctx.font = '14px Monaco';
+                ctx.fillText('Gráfico só pode ser exibido para problemas com 2 variáveis.', 20, 180);
+                ctx.fillText('Para mais de 2 variáveis, a visualização geométrica', 20, 200);
+                ctx.fillText('não é possível no espaço bidimensional.', 20, 220);
+                return;
+            }
+           
+            Chart.defaults.color = '#c9d1d9';
+            Chart.defaults.borderColor = '#30363d';
+           
+            const datasets = [];
+            const colors = ['#f85149', '#79c0ff', '#ffa657', '#56d364', '#d2a8ff'];
+           
+            inputData.constraints.forEach((constraint, index) => {
+                const points = [];
+                const a = constraint.coefficients[0];
+                const b = constraint.coefficients[1];
+                const c = constraint.rhs;
+               
+                for (let x = 0; x <= 20; x += 0.5) {
+                    if (Math.abs(b) > 1e-10) {
+                        const y = (c - a * x) / b;
+                        if (y >= 0 && y <= 20) {
+                            points.push({ x: x, y: y });
+                        }
+                    }
+                }
+               
+                datasets.push({
+                    label: `R${index + 1}: ${a}x₁ + ${b}x₂ ${constraint.operator} ${c}`,
+                    data: points,
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0,
+                    pointRadius: 0
+                });
+            });
+           
+            if (result.optimal) {
+                datasets.push({
+                    label: `Ótimo (${result.solution[0].toFixed(2)}, ${result.solution[1].toFixed(2)})`,
+                    data: [{ x: result.solution[0], y: result.solution[1] }],
+                    backgroundColor: '#3fb950',
+                    borderColor: '#3fb950',
+                    pointRadius: 6,
+                    showLine: false
+                });
+            }
+           
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: { datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Região Feasível',
+                            color: '#f0f6fc'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                color: '#c9d1d9',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'x₁',
+                                color: '#c9d1d9'
+                            },
+                            min: 0,
+                            max: 15,
+                            grid: {
+                                color: '#30363d'
+                            },
+                            ticks: {
+                                color: '#8b949e'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'x₂',
+                                color: '#c9d1d9'
+                            },
+                            min: 0,
+                            max: 15,
+                            grid: {
+                                color: '#30363d'
+                            },
+                            ticks: {
+                                color: '#8b949e'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+
+        function solve() {
+            try {
+                const inputData = parseInput();
+                const result = solveSimplexMethod(inputData.objective, inputData.constraints, inputData.optType);
+               
+                displayResults(result, inputData);
+                plotFeasibleRegion(inputData, result);
+               
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="error">
+                        <h3>Erro</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+
+        // Exemplo inicial
+        document.getElementById('objective-0').value = '3';
+        document.getElementById('objective-1').value = '2';
+        document.getElementById('constraint-0-0').value = '1';
+        document.getElementById('constraint-0-1').value = '1';
+        document.getElementById('constraint-0-rhs').value = '4';
+        document.getElementById('constraint-1-0').value = '2';
+        document.getElementById('constraint-1-1').value = '1';
+        document.getElementById('constraint-1-rhs').value = '6';
+    </script>
+</body>
+</html>
+
